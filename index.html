@@ -9,6 +9,7 @@
 <title>Bulk Tracker V1</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -748,10 +749,34 @@ function doExport() {
   const payload = { days: allDays, favs: favorites, version:1 };
   const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   const container = document.getElementById('export-result');
+  
+  // Check if code is too long for QR (max ~2900 chars)
+  const qrPossible = code.length <= 2900;
+  
   container.innerHTML = `
-    <div style="font-size:11px;color:#64748b;margin-bottom:6px">Kopieer deze code:</div>
+    <div style="font-size:11px;color:#52796f;margin-bottom:10px;font-weight:600">
+      ${qrPossible ? '📱 Scan de QR code met je telefoon:' : '⚠️ Data te groot voor QR — gebruik de tekst methode:'}
+    </div>
+    ${qrPossible ? '<div id="qr-container" style="background:#fff;padding:14px;border-radius:12px;display:inline-block;margin-bottom:10px;border:1px solid #a8d4b4"></div>' : ''}
+    <div style="font-size:11px;color:#52796f;margin-bottom:6px;margin-top:${qrPossible?'4':'0'}px">Of kopieer de code handmatig:</div>
     <textarea class="code-area" readonly onclick="this.select()">${code}</textarea>
     <button class="full-btn" style="background:#22c55e;color:#fff;margin-top:6px" onclick="copyCode('${code}')">📋 Kopieer naar klembord</button>`;
+  
+  if (qrPossible) {
+    setTimeout(() => {
+      const qrEl = document.getElementById('qr-container');
+      if (qrEl && typeof QRCode !== 'undefined') {
+        new QRCode(qrEl, {
+          text: code,
+          width: 200,
+          height: 200,
+          colorDark: '#2d6a4f',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    }, 100);
+  }
 }
 
 function copyCode(code) {
